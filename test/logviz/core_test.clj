@@ -1,4 +1,4 @@
-(ns logviz.test.core-test
+(ns logviz.core-test
   (:require [logviz.core :as sut]
             [clojure.test :refer :all]))
 
@@ -13,8 +13,8 @@
 (deftest add-to-collection-with-one-element
   (testing "Add to collection with one element"
     (is (=
-         (sut/append [["key" 1]] "key" "value")
-         [["key" 2]]
+         (sut/append [["key" 4]] "key" "value")
+         [["key" 5]]
          ))
     ))
 
@@ -25,4 +25,19 @@
          [["key" 2] ["new-key" 1]]
          ))
     ))
+
+(deftest graph
+  (testing "Add to collection with one element and create a new bucket"
+    (is (=
+         (sut/graph [["_" 1] ["_" 2] ["_" 1] ["_" 3]])
+         ["   x"
+          " x x"
+          "xxxx"]
+         ))
+    ))
+
+
+(->> (sut/graph [["_" 1] ["_" 2] ["_" 1] ["_" 3]])
+     (map println)
+     )
 
