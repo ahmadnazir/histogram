@@ -3,28 +3,44 @@
             [clj-time.core :as t]
             [clj-time.coerce :as tc]
             [logviz.util :as util]
-            )
-    (:gen-class))
+
+            [logviz.color :as color])
+  (:gen-class))
 
 (defn bucket
-  "Create time bucket"
+  "Create time bucket. If time span is not specified, then 1 second is used as default."
   ([]
-   (bucket 1))
-  ([width]
-   (let [now (tc/to-long (t/now))
-         width (* 1000 width) ;; Minimum size of the bucket is a second
-         ]
-     (quot now width)
+   (bucket 1000))  ;; Default time bucket interval is a second
+  ([interval]
+   (let [now (tc/to-long (t/now))]
+     (quot now interval)
      )))
 
+(defn quantify
+  [line]
+  (cond line 1 :else 0))
+
 (defn append
-  "Add value to the bucket"
-  [coll bucket line]
-  (let [[k v] (last coll)]
-    (cond (empty? coll) [ [bucket 1] ]
-          (= k bucket)  (conj (vec (drop-last coll)) [bucket (inc v)])
-          :else         (conj coll [bucket 1])
-          )))
+  "Add value to the bucket. If :with-holes is also specified, then add empty lines for every absent bucket."
+  ([coll bucket line]
+   (let [[k v] (last coll)]
+     (cond (empty? coll) [ [bucket (quantify line)] ]
+           (= k bucket)  (conj (vec (drop-last coll)) [bucket (inc v)])
+           :else         (conj coll [bucket (quantify line)])
+           )))
+  ([coll bucket line _]
+   (cond (empty? coll) (append coll bucket line)
+         :else         (let [[previous-bucket _] (last coll)
+                             count               (- bucket previous-bucket)]
+                         (loop [b previous-bucket
+                                c coll
+                                ]
+                           (cond (= b bucket) (append c bucket line)
+                                 :else (recur (inc b) (append c (inc b) nil))
+                                 )
+                           )
+                         ))
+   ))
 
 ;; graph
 ;; ----
@@ -39,28 +55,24 @@
   [col]
   (map reverse col))
 
+
+
 (defn graph
   "Graph! Take the values and create a histogram. [[k v]] -> v -> number of chars -> pivot -> graph"
-  [col]
-  (let [values (map second col)
+  [char-fn coll ]
+  (let [values (map second coll)
         height (apply max values)
         ]
     (->> values
-         (map (fn [x] (concat (repeat x "#") (repeat (- height x) " ")))) ;; use chars for the histogram
-         flip                                                ;; mirror / flip i.e. 180 degrees
-         pivot                                             ;; pivot / rotate 90 degrees
-         (map (fn [c] (str (apply str c))))                           ;; string representation of a graph
-         ))
+         (map (fn [v] (concat (repeat v (char-fn)) (repeat (- height v) " "))))
+         flip                                                                   ;; mirror / flip i.e. 180 degrees
+         pivot                                                                  ;; pivot / rotate 90 degrees
+         (map (fn [c] (str (apply str c))))                                     ;; string representation of a graph
+         )
+    )
   )
 
-
 ;; TODO
-;;
-;; Sporadic:
-;; - find the min dist?
-;;
-;; Events really close together:
-;; - based on the distribution, group the keys and graph
 ;;
 ;; Adjust the height:
 ;; - If there are too many items in a bucket, then they need to be normalized
@@ -70,14 +82,14 @@
 
 
 (defn -main [& args]
-  (loop [m [] lines (line-seq (java.io.BufferedReader. *in*))]
+  (loop [coll []
+         lines (line-seq (java.io.BufferedReader. *in*))
+         ]
     (let [line (first lines)
-          time (t/time-now)
-          m (append m (bucket) line)
+          interval 1000
+          current-bucket (bucket interval)
+          coll (append coll current-bucket line :with-holes)
           ]
-      ;; The graph m has some lazy component that I can't figure out - need to
-      ;; explicity get all the rows by calling `first`. Simply doing a (map
-      ;; println (graph m)) won't print anything
-      (util/print! (graph m))
-      (recur m (rest lines))))
+      (util/print! (graph (fn [] (color/nth-color 0)) coll)) ;; (map println ...) doesn't work - This needs to be evaluated eagerly
+      (recur coll (rest lines))))
   )

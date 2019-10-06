@@ -1,8 +1,10 @@
 (ns logviz.core-test
   (:require [logviz.core :as sut]
-            [clojure.test :refer :all]))
+            [clojure.test :refer :all]
+            [logviz.color :as color]
+            ))
 
-(deftest add-to-empty-collection
+(deftest append-to-empty-collection
   (testing "Add to empty collection"
     (is (=
          (sut/append [] "key" "value")
@@ -10,7 +12,7 @@
          ))
     ))
 
-(deftest add-to-collection-with-one-element
+(deftest append-to-collection-with-one-element
   (testing "Add to collection with one element"
     (is (=
          (sut/append [["key" 4]] "key" "value")
@@ -18,7 +20,15 @@
          ))
     ))
 
-(deftest add-to-collection-with-one-element-new-bucket
+(deftest append-to-collection-with-holes
+  (testing "Add to collection with holes"
+    (is (=
+         (sut/append [[0 4]] 2 "value" :with-holes)
+         [[0 4] [1 0] [2 1]]
+         ))
+    ))
+
+(deftest append-to-collection-with-one-element-new-bucket
   (testing "Add to collection with one element and create a new bucket"
     (is (=
          (sut/append [["key" 2]] "new-key" "value")
@@ -29,15 +39,11 @@
 (deftest graph
   (testing "Add to collection with one element and create a new bucket"
     (is (=
-         (sut/graph [["_" 1] ["_" 2] ["_" 1] ["_" 3]])
+         (sut/graph (fn [] "x") [["_" 1] ["_" 2] ["_" 1] ["_" 3]])
          ["   x"
           " x x"
           "xxxx"]
          ))
     ))
 
-
-(->> (sut/graph [["_" 1] ["_" 2] ["_" 1] ["_" 3]])
-     (map println)
-     )
-
+;; (sut/graph identity [["_" 1] ["_" 2] ["_" 1] ["_" 3]])
