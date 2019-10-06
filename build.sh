@@ -23,7 +23,7 @@ docker run -it \
         -v `pwd`:`pwd` \
         -u $UID:$GID \
         quay.io/quarkus/centos-quarkus-native-s2i:graalvm-1.0.0-rc16 \
-        sh -c "native-image -jar ../target/$NAME.jar"
+        sh -c "native-image -H:+ReportUnsupportedElementsAtRuntime -jar ../target/$NAME.jar"
 
 mv ./$NAME ../logviz
 
