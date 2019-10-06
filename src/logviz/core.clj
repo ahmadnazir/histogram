@@ -1,20 +1,21 @@
 (ns logviz.core
   (:require [clojure.string :as s]
             [clj-time.core :as t]
+            [clj-time.coerce :as tc]
+            [logviz.util :as util]
             )
     (:gen-class))
 
-
 (defn bucket
   "Create time bucket"
-  []
-  (let [now (t/time-now)
-        sec (t/second now)
-        min (t/second now)
-        hr (t/hour now)
-        ]
-    [hr min sec]
-    ))
+  ([]
+   (bucket 1))
+  ([width]
+   (let [now (tc/to-long (t/now))
+         width (* 1000 width) ;; Minimum size of the bucket is a second
+         ]
+     (quot now width)
+     )))
 
 (defn append
   "Add value to the bucket"
@@ -24,28 +25,6 @@
           (= k bucket)  (conj (vec (drop-last coll)) [bucket (inc v)])
           :else         (conj coll [bucket 1])
           )))
-
-;; utils
-;; -----
-
-(defn print!
-  "Eagerly print all the values in a collection"
-  [collection]
-  (loop [rows collection]
-    (cond (empty? rows) (println "")
-          :else (do (println (first rows))
-                    (recur (rest rows))
-                    )))
-  )
-
-(defn tee!
-  "Print and return"
-  [col]
-  (do
-    (print! col)
-    col
-    )
-  )
 
 ;; graph
 ;; ----
@@ -99,6 +78,6 @@
       ;; The graph m has some lazy component that I can't figure out - need to
       ;; explicity get all the rows by calling `first`. Simply doing a (map
       ;; println (graph m)) won't print anything
-      (print! (graph m))
+      (util/print! (graph m))
       (recur m (rest lines))))
   )
