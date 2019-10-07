@@ -25,7 +25,7 @@ docker run -it \
         quay.io/quarkus/centos-quarkus-native-s2i:graalvm-1.0.0-rc16 \
         sh -c "native-image -H:+ReportUnsupportedElementsAtRuntime -jar ../target/$NAME.jar"
 
-mv ./$NAME ../logviz
+mv ./$NAME ../histogram
 
 cd ../
 rm build -r

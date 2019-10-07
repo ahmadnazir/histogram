@@ -1,4 +1,4 @@
-(ns logviz.util)
+(ns histogram.util)
 
 (defn print!
   "Eagerly print all the values in a collection"

@@ -1,20 +1,19 @@
-(ns logviz.core
+(ns histogram.core
   (:require [clojure.string :as s]
             [clj-time.core :as t]
             [clj-time.coerce :as tc]
-            [logviz.util :as util]
-
-            [logviz.color :as color])
+            [histogram.util :as util]
+            [histogram.color :as color])
   (:gen-class))
 
 (defn bucket
-  "Create time bucket. If time span is not specified, then 1 second is used as default."
-  ([]
-   (bucket 1000))  ;; Default time bucket interval is a second
-  ([interval]
+  "Create time bucket. If time in ms (since epoch) is not specified, current time is used. Time span should be in milliseconds."
+  ([interval] ;; only for backwards compatibility
    (let [now (tc/to-long (t/now))]
      (quot now interval)
-     )))
+     ))
+  ([interval time-ms]
+   (quot time-ms interval)))
 
 (defn quantify
   [line]
@@ -72,6 +71,7 @@
     )
   )
 
+
 ;; TODO
 ;;
 ;; Adjust the height:
@@ -80,16 +80,22 @@
 ;; Different types of items:
 ;; - Right now I am only counting the items - not counting the different types of items
 
-
 (defn -main [& args]
-  (loop [coll []
+  (loop [m {}
          lines (line-seq (java.io.BufferedReader. *in*))
          ]
     (let [line (first lines)
-          interval 1000
-          current-bucket (bucket interval)
-          coll (append coll current-bucket line :with-holes)
-          ]
-      (util/print! (graph (fn [] (color/nth-color 0)) coll)) ;; (map println ...) doesn't work - This needs to be evaluated eagerly
-      (recur coll (rest lines))))
-  )
+          [t value & values] (s/split line #" ") ;; time and value ;; todo check if line exists
+          time-ms t                              ;; convert t to time-ms e.g '07/Oct/2019:18:10:14'
+          b (bucket 1000)                        ;; Pass time-ms
+          coll (m value)
+          m (assoc m value (append coll b value :with-holes))
+          gs (map-indexed (fn [i [k v]] (graph (fn [] (color/nth-color i)) v)) (seq m))
+      ]
+      (loop [xs gs]
+        (cond (empty? xs) (println "")
+              :else (do (util/print! (first xs))
+                        (recur (rest xs))
+                        )))
+      (recur m (rest lines))
+      )))

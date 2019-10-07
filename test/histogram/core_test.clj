@@ -1,7 +1,7 @@
-(ns logviz.core-test
-  (:require [logviz.core :as sut]
+(ns histogram.core-test
+  (:require [histogram.core :as sut]
             [clojure.test :refer :all]
-            [logviz.color :as color]
+            [histogram.color :as color]
             ))
 
 (deftest append-to-empty-collection

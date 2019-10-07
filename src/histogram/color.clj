@@ -1,4 +1,4 @@
-(ns logviz.color)
+(ns histogram.color)
 
 (defn color
   "Bash color cyan"
@@ -9,11 +9,12 @@
 (defn nth-color
   "Indexed colors"
   [n]
-  (-> (map list (range 0 10) [ 46 47 45 44 43])
+  (-> (map list (range 0 10) (range 41 49))
       (nth n)
       second
       (color " ")
        )
   )
+
 
 

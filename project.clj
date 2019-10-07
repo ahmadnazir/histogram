@@ -7,5 +7,5 @@
                  [clj-time "0.15.2"]
 ]
   :repl-options {:init-ns app.core}
-  :main logviz.core
+  :main histogram.core
   )
